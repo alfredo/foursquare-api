@@ -1,3 +1,5 @@
+import urlparse
+import time
 import urllib
 import simplejson
 
@@ -24,13 +26,32 @@ ERROR_TYPES = {
 FS_SERVER = 'foursquare.com'
 FS_AUTH_URL = 'https://%s/oauth2/authenticate' % FS_SERVER
 FS_TOKEN_URL = 'https://%s/oauth2/access_token' % FS_SERVER
+FS_ENDPOINT_URL = 'https://api.%s/v2' % FS_SERVER
 
+
+class FoursquareAuth(object):
+
+    def __init__(self, client_id, client_secret):
+        self.client_id = client_id
+        self.client_secret = client_secret
 
 class Foursquare(object):
 
     def __init__(self, client_id, client_secret):
         self.client_id = client_id
         self.client_secret = client_secret
+
+    def get_params(self):
+        params = {'client_id': self.client_id,
+                  'client_secret': self.client_secret
+                  }
+        return params
+
+    def do_request(self, url, params):
+        url = '%s%s?%s'% (FS_ENDPOINT_URL, url, urllib.urlencode(params))
+        response = urllib.urlopen(url).read()
+        result = simplejson.loads(response)
+        assert False, result
 
     def auth_url(self, redirect_url):
         data = {'client_id': self.client_id,
@@ -56,3 +77,10 @@ class Foursquare(object):
         if 'access_token' in result:
             return result['access_token']
         return False
+
+
+    def search_venues(self, longitude, latitude):
+        params = self.get_params()
+        params = {'ll': '%s,%s' % (longitude, latitude),
+                  }
+        self.do_request('/venues/search', params)
