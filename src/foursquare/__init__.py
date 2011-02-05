@@ -3,6 +3,8 @@ import time
 import urllib
 import simplejson
 
+from foursquare.models import Venue
+
 ERRORS = {
     400: 'Bad Request',
     401: 'Unauthorized',
@@ -41,17 +43,27 @@ class Foursquare(object):
         self.client_id = client_id
         self.client_secret = client_secret
 
-    def get_params(self):
+    @property
+    def userless_params(self):
         params = {'client_id': self.client_id,
                   'client_secret': self.client_secret
                   }
         return params
 
     def do_request(self, url, params):
+        """Performs the passed request and returns meaninful data"""
         url = '%s%s?%s'% (FS_ENDPOINT_URL, url, urllib.urlencode(params))
         response = urllib.urlopen(url).read()
         result = simplejson.loads(response)
-        assert False, result
+        if not result.get('meta'):
+            raise ValueError('Got an invalid response')
+        response_code = result['meta'].get('code')
+        if response_code != 200:
+            error_message = ERRORS[response_code] \
+                            if response_code in ERRORS else 'Unkown Error'
+            raise ValueError(error_message)
+        return result['response']
+
 
     def auth_url(self, redirect_url):
         data = {'client_id': self.client_id,
@@ -78,9 +90,13 @@ class Foursquare(object):
             return result['access_token']
         return False
 
-
-    def search_venues(self, longitude, latitude):
-        params = self.get_params()
+    def search_venues(self, longitude, latitude, userless=False, extra_params=None):
+        """Search venues with the given params.
+        Returns a json list of venues"""
         params = {'ll': '%s,%s' % (longitude, latitude),
                   }
-        self.do_request('/venues/search', params)
+        if userless:
+            params.update(self.userless_params)
+        if extra_params:
+            params.update(extra_params)
+        return self.do_request('/venues/search', params)
