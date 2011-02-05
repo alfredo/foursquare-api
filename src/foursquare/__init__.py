@@ -3,8 +3,6 @@ import time
 import urllib
 import simplejson
 
-from foursquare.models import Venue
-
 ERRORS = {
     400: 'Bad Request',
     401: 'Unauthorized',
