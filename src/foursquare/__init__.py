@@ -29,17 +29,12 @@ FS_TOKEN_URL = 'https://%s/oauth2/access_token' % FS_SERVER
 FS_ENDPOINT_URL = 'https://api.%s/v2' % FS_SERVER
 
 
-class FoursquareAuth(object):
-
-    def __init__(self, client_id, client_secret):
-        self.client_id = client_id
-        self.client_secret = client_secret
-
 class Foursquare(object):
 
-    def __init__(self, client_id, client_secret):
+    def __init__(self, client_id, client_secret, userless=False):
         self.client_id = client_id
         self.client_secret = client_secret
+        self.userless = userless
 
     @property
     def userless_params(self):
@@ -50,6 +45,8 @@ class Foursquare(object):
 
     def do_request(self, url, params):
         """Performs the passed request and returns meaninful data"""
+        if self.userless:
+            params.update(self.userless_params)
         url = '%s%s?%s'% (FS_ENDPOINT_URL, url, urllib.urlencode(params))
         response = urllib.urlopen(url).read()
         result = simplejson.loads(response)
@@ -88,13 +85,18 @@ class Foursquare(object):
             return result['access_token']
         return False
 
-    def search_venues(self, longitude, latitude, userless=False, extra_params=None):
+    def search_venues(self, latitude, longitude, extra_params=None):
         """Search venues with the given params.
-        Returns a json list of venues"""
-        params = {'ll': '%s,%s' % (longitude, latitude),
-                  }
-        if userless:
-            params.update(self.userless_params)
+        Returns a json list of venues
+        http://developer.foursquare.com/docs/venues/search.html
+        Optional extra params
+        llAcc	10000.0	Accuracy of latitude and longitude, in meters.
+        alt	0	Altitude of the user's location, in meters.
+        altAcc	10000.0	Accuracy of the user's altitude, in meters.
+        query	donuts	A search term to be applied against titles.
+        limit	10	Number of results to return, up to 50.
+        """
+        params = {'ll': '%s,%s' % (latitude, longitude)}
         if extra_params:
             params.update(extra_params)
         return self.do_request('/venues/search', params)
