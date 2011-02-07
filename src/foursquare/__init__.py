@@ -100,3 +100,15 @@ class Foursquare(object):
         if extra_params:
             params.update(extra_params)
         return self.do_request('/venues/search', params)
+
+    def get_categories(self, categories=None):
+        """Returns a hierarchical list of categories applied to venues.
+        Note that top-level categories do not have IDs because they
+        cannot be assigned to a venue.
+        ``categories``	An array of categories containing sub- and sub-sub-
+        categories.
+        """
+        params = {}
+        if categories:
+            params['categories'] =  categories
+        return self.do_request('/venues/categories', params)
