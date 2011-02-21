@@ -59,8 +59,7 @@ class Foursquare(object):
             raise ValueError(error_message)
         return result['response']
 
-
-    def auth_url(self, redirect_url):
+    def auth_url(self, redirect_url, mobile=False):
         data = {'client_id': self.client_id,
                 'response_type': 'code',
                 'redirect_uri': redirect_url}
@@ -100,6 +99,13 @@ class Foursquare(object):
         if extra_params:
             params.update(extra_params)
         return self.do_request('/venues/search', params)
+
+    def get_venue(self, foursquare_id):
+        """Retrieve details of a venue from ID
+        https://api.foursquare.com/v2/venues/VENUE_ID
+        """
+        params = {}
+        return self.do_request('/venues/%s' % foursquare_id, params)
 
     def get_categories(self, categories=None):
         """Returns a hierarchical list of categories applied to venues.
